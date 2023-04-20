@@ -11,10 +11,10 @@
 		(var cameraEntity:gfx = "$datahub.getSingleEntity(CC.camera)")
 		(var altVision:bool = "cameraEntity.camera.altVision" (event "cameraEntity.camera.evAltVisionChanged"))
 		(macro GET_MARKER_ENTITY_COMPONENT 'distance')
-		(var timerEntity:gfx = "$datahub.getSingleEntity(CC.timer)")
+		(var _timerEntity:gfx = "$datahub.getSingleEntity(CC.timer)")
 		(var cruiseEntity:gfx = "$datahub.getPrimaryEntity(CC.cruise, SC.Battle.CRUISE_CONTROL_TYPE.SPEED)")
 		(var shipSpeed:number = "cruiseEntity.cruise ? cruiseEntity.cruise.value: 0" (event "cruiseEntity.cruise.evValueChanged"))
-		(var timeToTravel:number = "distanceComponent ? (distanceComponent.distanceToShip * 1000) / (2.6854 * abs(shipSpeed)): 0" (event "timerEntity.timer.evFrequent"))
+		(var timeToTravel:number = "distanceComponent ? (distanceComponent.distanceToShip * 1000) / (2.6854 * abs(shipSpeed)): 0" (event "_timerEntity.timer.evFrequent"))
 		(macro HUMAN_READABLE_COUNTDOWN_SCOPE "timeToTravel")
 		#
 
@@ -23,11 +23,22 @@
 		(var isFlagPoint:bool = "isIn(pointType, [CONTROL_POINT_TYPE.BASE_WITH_POINTS, CONTROL_POINT_TYPE.MEGABASE, CONTROL_POINT_TYPE.BASE])")
 
 		(var capturePointLabel:str = "capturePointComponent ? capturePointComponent.label : ''")
+		(var isCapturePointActive:bool = "capturePointComponent ? capturePointComponent.active : 'false'" (event "capturePointComponent.evActiveChanged"))
+		(var capturePointTimerName:str = "capturePointComponent ? capturePointComponent.timerName : ''" (event "markerEntity.evAdded"))
 		(var neutralProgress:number = "capturePointComponent ? capturePointComponent.neutralProgress : 0" (event "progressComponent.evChanged"))
 		(var bothInside:bool = "capturePointComponent && capturePointComponent.bothInside" (event "capturePointComponent.evBothInsideChanged"))
 
 		(var captureProgress:number = "progressComponent ? progressComponent.value : 0" (event "progressComponent.evChanged"))
 		(var isCaptured:bool = "captureProgress == 0")
+
+		(var linkedTimerTaskWatcher:gfx = "_isBattleStatsElement ? $datahub.getPrimWatcher(CC.task, capturePointTimerName) : null")
+		(var linkedTimerTask:gfx = "linkedTimerTaskWatcher ? linkedTimerTaskWatcher.entity : null" (event "linkedTimerTaskWatcher.event"))
+		(var timeoutComponent:gfx = "linkedTimerTask ? linkedTimerTask.timeout : null" (event "linkedTimerTask.timeout.evAdded") (event "linkedTimerTask.timeout.evUpdated"))
+		(var linkedTimerValue:number = "timeoutComponent ? timeoutComponent.time : 0" (event "timeoutComponent.evTimeChanged") (event "timeoutComponent.evRunningChanged"))
+
+		(var timerEntity:gfx = "_isBattleStatsElement ? $datahub.getSingleEntity(CC.battleTimer) : null")
+		(var currentTime:number = "timerEntity && timerEntity.battleTimer ? timerEntity.battleTimer.battleTime : 0" (event "timerEntity.battleTimer.evBattleTimeChanged"))
+		(var timeLeftToCapturePointActivation:number = "linkedTimerValue > currentTime ? linkedTimerValue - currentTime : 0")
 		
 
 		
@@ -76,10 +87,11 @@
 	
 	
 	
-	(block
 
+	(block
 		(style
-			(width = 0) (height = 0)
+			(bind alpha "isCapturePointActive ? 1 : 0.5")
+			(pivotX = "50%") (pivotY = "50%")
 			(align = "center|middle")
 		)
 
@@ -157,9 +169,11 @@
 		)
 	)
 
-
+	
+	
 	
 	(block
+		(bind visible "!_isBattleStatsElement || isCapturePointActive")
 		(class $FullsizeAbsolute)
 		(style (align = "center|middle"))
 
@@ -169,7 +183,7 @@
 			(class $WorldMarkerItemMargins)
 			(style
 				(position = "absolute")
-				(bind top "13px")
+				(bind top "30px")
 				(hcenter = 0px)
 			)
 			(tf
@@ -198,6 +212,32 @@
 				(bind backgroundImage "CAPTURE_POINT_ASSETS_PATH + 'icon_base_' + relation + '_flag.png'")
 				(backgroundSize = "autosize")
 			)
+		)
+	)
+
+	(block $enabled = "_isBattleStatsElement"
+		(bind visible "!isCapturePointActive && timeLeftToCapturePointActivation > 0")
+		(class $FullsizeAbsolute)
+		(style
+			(backgroundColor = "0x01000000")
+			(align = "center|middle")
+		)
+		
+		(controller $Tooltip (renderer = 'SimpleStatusTooltip')
+			(args 
+				_unifiedStatus="SC.Ui_styles.UNIFIED_STATUS.DEFAULT"
+				_text="'IDS_TIME_TILL_CAPTURE_POINT_ACTIVATION'"
+			)
+			(align="bottom|center")
+			(position="border")
+			(offset=[0, 6])
+			(screenBoundsOffset={left:10, top:10, right:10, bottom:10})
+			(macro SIMPLE_TOOLTIP_ANIMATION)
+		)
+
+		(tf
+			(class $TextDefaultBoldNM)
+			(bind text "countdownFormat(timeLeftToCapturePointActivation, 0, true, true)")
 		)
 	)
 )
