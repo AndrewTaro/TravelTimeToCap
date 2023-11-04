@@ -1,11 +1,9 @@
-(def element CapturePointIndicator (_entityId:number) layout=true
+(def element CapturePointIndicator (_markerEntity:gfx, _isBattleStatsElement:bool=false) layout=true
 	(scope
-		(var markerEntity:gfx = "$datahub.getEntity(_entityId)")
-
 		(macro GET_MARKER_ENTITY_COMPONENT 'capturePoint')
 		(macro GET_MARKER_ENTITY_COMPONENT 'progress')
 		(macro GET_MARKER_ENTITY_COMPONENT 'relation')
-		(macro VAR_RELATION "markerEntity")
+		(macro VAR_RELATION "_markerEntity")
 
 		#Modded
 		(var cameraEntity:gfx = "$datahub.getSingleEntity(CC.camera)")
@@ -24,22 +22,21 @@
 
 		(var capturePointLabel:str = "capturePointComponent ? capturePointComponent.label : ''")
 		(var isCapturePointActive:bool = "capturePointComponent ? capturePointComponent.active : 'false'" (event "capturePointComponent.evActiveChanged"))
-		(var capturePointTimerName:str = "capturePointComponent ? capturePointComponent.timerName : ''" (event "markerEntity.evAdded"))
+		(var capturePointTimerName:str = "capturePointComponent ? capturePointComponent.timerName : ''" (event "_markerEntity.evAdded"))
 		(var neutralProgress:number = "capturePointComponent ? capturePointComponent.neutralProgress : 0" (event "progressComponent.evChanged"))
 		(var bothInside:bool = "capturePointComponent && capturePointComponent.bothInside" (event "capturePointComponent.evBothInsideChanged"))
 
 		(var captureProgress:number = "progressComponent ? progressComponent.value : 0" (event "progressComponent.evChanged"))
 		(var isCaptured:bool = "captureProgress == 0")
 
-		(var linkedTimerTaskWatcher:gfx = "_isBattleStatsElement ? $datahub.getPrimWatcher(CC.task, capturePointTimerName) : null")
-		(var linkedTimerTask:gfx = "linkedTimerTaskWatcher ? linkedTimerTaskWatcher.entity : null" (event "linkedTimerTaskWatcher.event"))
-		(var timeoutComponent:gfx = "linkedTimerTask ? linkedTimerTask.timeout : null" (event "linkedTimerTask.timeout.evAdded") (event "linkedTimerTask.timeout.evUpdated"))
-		(var linkedTimerValue:number = "timeoutComponent ? timeoutComponent.time : 0" (event "timeoutComponent.evTimeChanged") (event "timeoutComponent.evRunningChanged"))
-
 		(var timerEntity:gfx = "_isBattleStatsElement ? $datahub.getSingleEntity(CC.battleTimer) : null")
 		(var currentTime:number = "timerEntity && timerEntity.battleTimer ? timerEntity.battleTimer.battleTime : 0" (event "timerEntity.battleTimer.evBattleTimeChanged"))
+	
+		(var linkedTimerTaskWatcher:gfx = "_isBattleStatsElement ? $datahub.getPrimWatcher(CC.task, capturePointTimerName) : null")
+		(var linkedTimerTask:gfx = "linkedTimerTaskWatcher ? linkedTimerTaskWatcher.entity : null" (event "linkedTimerTaskWatcher.event"))
+		(var timeoutComponent:gfx = "linkedTimerTask ? linkedTimerTask.timeout : null" (event "linkedTimerTask.evAdded") (event "linkedTimerTask.evRemoved"))
+		(var linkedTimerValue:number = "timeoutComponent ? timeoutComponent.time : 0" (event "timeoutComponent.evTimeChanged") (event "timeoutComponent.evRunningChanged"))
 		(var timeLeftToCapturePointActivation:number = "linkedTimerValue > currentTime ? linkedTimerValue - currentTime : 0")
-		
 
 		
 		(var invaderRelation:number = "capturePointComponent ? capturePointComponent.invaderRelation : 0" (event "capturePointComponent.evInvaderChanged"))
