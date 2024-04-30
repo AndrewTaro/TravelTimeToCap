@@ -6,14 +6,24 @@
 		(macro VAR_RELATION "_markerEntity")
 
 		#Modded
-		(var cameraEntity:gfx = "$datahub.getSingleEntity(CC.camera)")
-		(var altVision:bool = "cameraEntity.camera.altVision" (event "cameraEntity.camera.evAltVisionChanged"))
+		(var cameraComponent:gfx = "$datahub.getSingleComponent(CC.camera)")
+		(var altVision:bool = "cameraComponent.altVision" (event "cameraComponent.evAltVisionChanged"))
+
+		(macro GET_MARKER_ENTITY_COMPONENT 'circle')
+		(var mapSize:number = "cameraComponent.visibilityRange / cameraComponent.visibilityRangePerc" watch=false)
+		(var capSize:number = "circleComponent ? mapSize * circleComponent.radius : 0" (event "circleComponent.evRadiusChanged"))
+
 		(macro GET_MARKER_ENTITY_COMPONENT 'distance')
-		(var _timerEntity:gfx = "$datahub.getSingleEntity(CC.timer)")
+		(var timerComponent:gfx = "$datahub.getSingleComponent(CC.timer)")
 		(var cruiseEntity:gfx = "$datahub.getPrimaryEntity(CC.cruise, SC.Battle.CRUISE_CONTROL_TYPE.SPEED)")
-		(var shipSpeed:number = "cruiseEntity.cruise ? cruiseEntity.cruise.value: 0" (event "cruiseEntity.cruise.evValueChanged"))
-		(var timeToTravel:number = "distanceComponent ? (distanceComponent.distanceToShip * 1000) / (2.6854 * abs(shipSpeed)): 0" (event "_timerEntity.timer.evFrequent"))
+
+		(var shipSpeed:number = "cruiseEntity ? cruiseEntity.cruise.value: 0" (event "cruiseEntity.cruise.evValueChanged"))
+		(var shipSpeedMps:number = "2.6854 * abs(shipSpeed)")
+		(var distanceMeter:number = "distanceComponent ? (distanceComponent.distanceToShip - capSize) * 1000 : 0" (event "timerComponent.evFrequent"))
+		(var isTravelValid:bool = "shipSpeedMps > 0 && distanceMeter > 0")
+		(var timeToTravel:number = "isTravelValid ? distanceMeter / shipSpeedMps : 0")
 		(macro HUMAN_READABLE_COUNTDOWN_SCOPE "timeToTravel")
+		(var timeToTravelText:str = "isTravelValid ? countdownText : '--:--'")
 		#
 
 		(var pointType:number = "capturePointComponent ? capturePointComponent.type : 0")
@@ -82,7 +92,7 @@
 	)
 
 	
-	
+
 	
 
 	(block
@@ -180,13 +190,12 @@
 			(class $WorldMarkerItemMargins)
 			(style
 				(position = "absolute")
-				(bind top "30px")
+				(bind top "35px")
 				(hcenter = 0px)
 			)
 			(tf
 				(class $WorldMarkerTextItem)
-				#(bind text "timeToTravel > 0? countdownFormat(timeToTravel) + tr('IDS_SECOND'): '--'")
-				(bind text "countdownText")
+				(bind text "timeToTravelText")
 				
 				(style
 					(bind textColor "labelTextColor")
