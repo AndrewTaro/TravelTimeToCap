@@ -1,8 +1,10 @@
 # Travel Time to Cap
-This modification shows the minimum time required to travel to the objectives at the current speed.
-It is only visible when Alt-key (or detailed vision key if remapped) is pressed.  
-Due to a technical limitation, the estimated times are calculated based on the center of capture points instead of their circumferences. Therefore, you will reach an objective before the timer goes down to zero.  
-The mod is officially checked and approved by WG, thus is safe to use.
+This modification shows the minimum time required to travel to the edge of objectives at the current speed.
+
+- The radius of each capture point is taken into account. So the travel time is always accurate as long as your ship is
+  - at a stable speed
+  - going toward the center of the cap.
+- It becomes visible only when the Alt-key (or detailed vision key if remapped) is pressed.
 
 # Overview
 ![image](https://github.com/AndrewTaro/TravelTimeToCap/assets/36262823/74b37ef5-31a5-4a3a-a746-2bab395e0878)
